@@ -16,7 +16,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 Basic usage (example):
-#############################
+
 import time
 from sds011 import SDS011
 
@@ -32,7 +32,7 @@ sensor.reportmode = sensor.ReportModes.Initiative
 time.sleep(3)
 values = sensor.get_values()
 print(values[0], "--", values[1])
-################################
+
 
 The Sensor comes with a Windows software but can be used with raspberry pi GPIO feature by using the serial in and output channels.
 
