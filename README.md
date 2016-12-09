@@ -17,12 +17,12 @@ GNU General Public License for more details.
 
 Basic usage (example):
 
-import time
-from sds011 import SDS011
+import time  
+from sds011 import SDS011  
 
-sensor = SDS011("COM3") # Windows
-or
-sensor = SDS011("/dev/ttyAMA0")
+sensor = SDS011("COM3") # Windows  
+or  
+sensor = SDS011("/dev/ttyAMA0")  
 
 print(reader.device_id)
 sensor.reportmode == sensor.ReportModes.Passiv
