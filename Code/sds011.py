@@ -42,15 +42,12 @@ import struct
 import serial
 import sds011exceptions as ex
 
-# format [%(filename)s:%(lineno)s - %(funcName)20s()
-logging.basicConfig(filename='SDS011.log', level=logging.DEBUG,
-                    format='%(asctime)s - %(filename)s:%(lineno)s \
-                    - %(funcName)20s() - %(levelname)7s - %(message)s')
-LOGGER = logging.getLogger(__name__)
 
 
 class SDS011(object):
     """Class representing the SD011 dust sensor and its methods.
+        device_path on Win is one of your COM ports, on Linux
+        one of "/dev/ttyUSB..." or "/dev/ttyAMA...".
     """
 
     '''
@@ -75,6 +72,8 @@ class SDS011(object):
     Response aa:c5:02:01:01:00:cc:0b:db:ab
 
     '''
+    logging.getLogger(__name__).addHandler(logging.NullHandler())
+    
     __SerialStart = 0xAA
     __SerialEnd = 0xAB
     __SendByte = 0xB4
@@ -112,7 +111,11 @@ class SDS011(object):
     # Constructor
 
     def __init__(self, device_path):
-        LOGGER.debug("Start of constructor")
+        '''
+        device_path on Win is one of your COM ports, on Linux
+        one of "/dev/ttyUSB..." or "/dev/ttyAMA...".
+        '''
+        logging.debug("Start of constructor")
         self.device = None
         self.device = serial.Serial(device_path,
                                     baudrate=9600, stopbits=serial.STOPBITS_ONE,
@@ -121,7 +124,7 @@ class SDS011(object):
                                     timeout=2)
         if self.device.isOpen() is False:
             self.device.open()
-        LOGGER.info("Communication to device at %s initiated.", device_path)
+        logging.info("Communication to device at %s initiated.", device_path)
 
         # ToDo: initiate whith the values, the senor has. sensor has to be
         # queried for that
@@ -137,7 +140,7 @@ class SDS011(object):
         first_response = self.__response()
         if len(first_response) == 0:
             # Device might be sleeping. So wake it up
-            LOGGER.warning("Constructing the instance of a yet not responding "
+            logging.warning("Constructing the instance of a yet not responding "
                            "sensor. Who set it sleeping, in passive mode or a "
                            "duty cycle? I'm going to wake it up!'")
             self.__send(self.Command.WorkState,
@@ -146,18 +149,19 @@ class SDS011(object):
         # at this point, device is awake, shure. So store this state
         self.__workstate = self.WorkStates.Measuring
         self.__get_current_config()
-        LOGGER.info("Sensor has firmware %s", self.__firmware)
-        LOGGER.info("Sensor is in reportmode %s", self.__reportmode)
-        LOGGER.info("Sensor is in workstate %s", self.__workstate)
-        LOGGER.info("Sensor is in dutycycle %s, None if Zero",
+        logging.info("Sensor has firmware %s", self.__firmware)
+        logging.info("Sensor is in reportmode %s", self.__reportmode)
+        logging.info("Sensor is in workstate %s", self.__workstate)
+        logging.info("Sensor is in dutycycle %s, None if Zero",
                     self.__dutycycle)
-        LOGGER.info("Sensor has Device ID: %s", self.device_id)
-        LOGGER.debug("Constructor successful executed.")
+        logging.info("Sensor has Device ID: %s", self.device_id)
+        logging.debug("Constructor successful executed.")
 
     # Destructor
     def __del__(self):
         # it's better to clean up
-        self.device.close()
+        if self.device is not None:
+            self.device.close()
 
     # ReportMode
     @property
@@ -173,7 +177,7 @@ class SDS011(object):
             self.__send(self.Command.ReportMode, self.__construct_data(
                 self.CommandMode.Setting, value))
             self.__reportmode = value
-            LOGGER.info("reportmode setted: %s", value)
+            logging.info("reportmode setted: %s", value)
         else:
             raise TypeError("reportmode must be of type SDS011.ReportModes")
 
@@ -190,7 +194,7 @@ class SDS011(object):
             self.__send(self.Command.WorkState, self.__construct_data(
                 self.CommandMode.Setting, value))
             self.__workstate = value
-            LOGGER.info("workstate setted: %s", value)
+            logging.info("workstate setted: %s", value)
         else:
             raise TypeError("ReportMode must be of type SDS011.WorkStates")
     # dutycycle
@@ -214,8 +218,8 @@ class SDS011(object):
             # Calculate new timeout value
             self.__read_timeout = self.__calculate_read_timeout(value)
             self.__dutycycle_start = time.time()
-            LOGGER.debug("New timeout for dutycycle = %s", self.__read_timeout)
-            LOGGER.info("dutycycle setted: %s", value)
+            logging.debug("New timeout for dutycycle = %s", self.__read_timeout)
+            logging.info("dutycycle setted: %s", value)
             self.__get_current_config()
         else:
             raise TypeError("dutycycle must be of type SDS011.DutyCycles")
@@ -242,7 +246,7 @@ class SDS011(object):
         retval = bytearray()
         retval.append(cmdmode)
         retval.append(cmdvalue)
-        LOGGER.debug("Data %s for commandmode %s constructed.",
+        logging.debug("Data %s for commandmode %s constructed.",
                      cmdvalue, cmdmode)
         return retval
 
@@ -285,13 +289,13 @@ class SDS011(object):
     def __calculate_read_timeout(self, timeoutvalue):
         newtimeout = 60 * timeoutvalue + \
             self.__read_timeout_drift_percent / 100 * 60 * timeoutvalue
-        LOGGER.info("Timeout calculated for %s is %s",
+        logging.info("Timeout calculated for %s is %s",
                     timeoutvalue, newtimeout)
         return newtimeout
 
     def get_values(self):
         '''gets the sensor response and returns measured value of pm10 and pm25'''
-        LOGGER.info("get_values entered")
+        logging.info("get_values entered")
         if self.__workstate == self.WorkStates.Sleeping:
             raise ex.WorkStateError("sensor is sleeping and will not " +
                                     "send any values. Wake it up first.")
@@ -303,7 +307,7 @@ class SDS011(object):
         while self.dutycycle == 0 or \
                 time.time() < self.__dutycycle_start + self.__read_timeout:
             response_data = self.__response()
-            LOGGER.debug(
+            logging.debug(
                 "values received from sensor with response %s.", response_data)
             return self.__extract_values_from_response(response_data)
         raise TimeoutError(
@@ -323,7 +327,7 @@ class SDS011(object):
         if len(data) == 4:
             value_of_2point5micro = float(data[0] + data[1] * 256) / 10.0
             value_of_10micro = float(data[2] + data[3] * 256) / 10.0
-            LOGGER.debug("get_values successful executed.")
+            logging.debug("get_values successful executed.")
             if self.dutycycle != 0:
                 self.__dutycycle_start = time.time()
             return (value_of_10micro, value_of_2point5micro)
@@ -332,14 +336,14 @@ class SDS011(object):
 
     def __send(self, command, data):
         '''method for sending commands to the sensor and returning the response'''
-        LOGGER.debug("send() entered with command %s and data %s.",
+        logging.debug("send() entered with command %s and data %s.",
                      command.name, data)
         # Proof the input
         if not isinstance(command, self.Command):
             raise TypeError("command must be of type SDS011.Command")
         if not isinstance(data, bytearray):
             raise TypeError("data must be of type bytearray")
-        LOGGER.debug("Input parameter proofed")
+        logging.debug("Input parameter proofed")
         # Initialise the commandarray
         bytes_to_send = bytearray()
         bytes_to_send.append(self.__SerialStart)
@@ -362,17 +366,17 @@ class SDS011(object):
         bytes_to_send.append(self.__SerialEnd)
 
         #LOGGER.debug("Going to send: %s", "".join("%02x:" % b for b in bytes_to_send))
-        LOGGER.debug("Going to send: %s", bytes_to_send)
+        logging.debug("Going to send: %s", bytes_to_send)
 
         # send the command
         written_bytes = self.device.write(bytes_to_send)
         self.device.flush()
         if written_bytes != len(bytes_to_send):
             raise IOError("Not all bytes written")
-        LOGGER.debug("Sended and flushed: %s", bytes_to_send)
+        logging.debug("Sended and flushed: %s", bytes_to_send)
         # proof the receive value
         received = self.__response(command)
-        LOGGER.debug("Received: %s", received)
+        logging.debug("Received: %s", received)
         # when no command or command is request command,
         # second byte has to be ReceiveByte
         if ((command is None or command == self.Command.Request) and
@@ -391,7 +395,7 @@ class SDS011(object):
             returnvalue = received
         # return just the received data. Further evaluation of data outsite
         # this  function
-        LOGGER.debug("Leaving send() normal and returning %s", received[3: -2])
+        logging.debug("Leaving send() normal and returning %s", received[3: -2])
         return returnvalue
 
     def __response(self, command=None):
@@ -419,11 +423,11 @@ class SDS011(object):
                         break
             else:
                 if self.__dutycycle == 0:
-                    LOGGER.error("A sensore response has not arrived within timeout limit. "
+                    logging.error("A sensore response has not arrived within timeout limit. "
                                  "Is the senor in sleeping mode. Wake it up first! Returning "
                                  "empty bytearray from response!")
                 else:
-                    LOGGER.debug("No response as expected while in dutycycle")
+                    logging.debug("No response as expected while in dutycycle")
                 return bytearray()
 
         thebytes = struct.unpack('BBBBBBBB', self.device.read(8))
@@ -448,7 +452,7 @@ class SDS011(object):
             raise ValueError("Data received (%s) are from device and do not belong "
                              "to this device with id %s.",
                              bytes_received, bytes_received[-4:-2], self.__device_id)
-        LOGGER.debug("response() successful run")
+        logging.debug("response() successful run")
         return bytes_received
 
     def __checksum_make(self, data):
@@ -458,7 +462,7 @@ class SDS011(object):
         and (0xB4 or 0xC5 or 0xC0) at second position. It must end before
         the position where the checksum has to be placed.
         '''
-        LOGGER.debug("Building checksum for data %s.", data)
+        logging.debug("Building checksum for data %s.", data)
         # Build checksum for data to send or receive
         if len(data) not in (self.__CommandLength - 2, self.__ResponseLength - 2):
             raise ValueError("data has to be {0} or {1} long".format(
@@ -476,5 +480,5 @@ class SDS011(object):
         for i in range(2, len(data)):
             checksum = checksum + data[i]
         checksum = checksum % 256
-        LOGGER.debug("Checksum calculated is %s.", checksum)
+        logging.debug("Checksum calculated is %s.", checksum)
         return checksum
