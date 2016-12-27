@@ -43,4 +43,4 @@ You should have received a copy of the GNU General Public License along with SDS
 Have fun, and keep your air (inside and outside of your home) free of pollutants!
 
 # Thanks
-Thanks to Eric for the proofreading of these lines. It is always good to have a friend.
+Thanks to Eric for proofreading these lines. It is always good to have a friend.
