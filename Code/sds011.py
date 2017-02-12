@@ -73,7 +73,7 @@ class SDS011(object):
 
     '''
     logging.getLogger(__name__).addHandler(logging.NullHandler())
-    
+
     __SerialStart = 0xAA
     __SerialEnd = 0xAB
     __SendByte = 0xB4
@@ -141,8 +141,8 @@ class SDS011(object):
         if len(first_response) == 0:
             # Device might be sleeping. So wake it up
             logging.warning("Constructing the instance of a yet not responding "
-                           "sensor. Who set it sleeping, in passive mode or a "
-                           "duty cycle? I'm going to wake it up!'")
+                            "sensor. Who set it sleeping, in passive mode or a "
+                            "duty cycle? I'm going to wake it up!'")
             self.__send(self.Command.WorkState,
                         self.__construct_data(self.CommandMode.Setting,
                                               self.WorkStates.Measuring))
@@ -153,7 +153,7 @@ class SDS011(object):
         logging.info("Sensor is in reportmode %s", self.__reportmode)
         logging.info("Sensor is in workstate %s", self.__workstate)
         logging.info("Sensor is in dutycycle %s, None if Zero",
-                    self.__dutycycle)
+                     self.__dutycycle)
         logging.info("Sensor has Device ID: %s", self.device_id)
         logging.debug("Constructor successful executed.")
 
@@ -227,7 +227,7 @@ class SDS011(object):
     @property
     def device_id(self):
         """The device id as a string"""
-        return "{0:02d}{1:02d}".format(self.__device_id[0], self.__device_id[1])
+        return "{0:02x}{1:02x}".format(self.__device_id[0], self.__device_id[1]).upper()
 
     @property
     def firmware(self):
@@ -247,7 +247,7 @@ class SDS011(object):
         retval.append(cmdmode)
         retval.append(cmdvalue)
         logging.debug("Data %s for commandmode %s constructed.",
-                     cmdvalue, cmdmode)
+                      cmdvalue, cmdmode)
         return retval
 
     def __get_current_config(self):
@@ -290,7 +290,7 @@ class SDS011(object):
         newtimeout = 60 * timeoutvalue + \
             self.__read_timeout_drift_percent / 100 * 60 * timeoutvalue
         logging.info("Timeout calculated for %s is %s",
-                    timeoutvalue, newtimeout)
+                     timeoutvalue, newtimeout)
         return newtimeout
 
     def get_values(self):
@@ -337,7 +337,7 @@ class SDS011(object):
     def __send(self, command, data):
         '''method for sending commands to the sensor and returning the response'''
         logging.debug("send() entered with command %s and data %s.",
-                     command.name, data)
+                      command.name, data)
         # Proof the input
         if not isinstance(command, self.Command):
             raise TypeError("command must be of type SDS011.Command")
@@ -424,8 +424,8 @@ class SDS011(object):
             else:
                 if self.__dutycycle == 0:
                     logging.error("A sensore response has not arrived within timeout limit. "
-                                 "Is the senor in sleeping mode. Wake it up first! Returning "
-                                 "empty bytearray from response!")
+                                  "Is the senor in sleeping mode. Wake it up first! Returning "
+                                  "empty bytearray from response!")
                 else:
                     logging.debug("No response as expected while in dutycycle")
                 return bytearray()
