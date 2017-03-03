@@ -1,6 +1,6 @@
 # Introduction
 
-The SDS011 module's operational features, including its PM2.5/PM10 sensing features, **greatly surpass those of most other such modules available via the web**. In addition to a standard **duty cycle and firmware / sensor id readouts**, these features include a useful **sleep mode**. The Python code described below controls the sensor, developed by Nova Fitness Co., Ltd http://inovafitness.com/en/, for measurement of air particles <=10µm (PM10) and <=2.5µm (PM2.5).
+The SDS011 module's operational features, including its PM2.5/PM10 sensing features, **greatly surpass those of most other such modules available via the web**. In addition to a standard **duty cycle and firmware / sensor id readouts**, these features include a useful **sleep mode**. The Python3 code described below controls the sensor, developed by Nova Fitness Co., Ltd http://inovafitness.com/en/, for measurement of air particles <=10µm (PM10) and <=2.5µm (PM2.5).
 # Goal
 The code I found available on the web offers only very limited functionality. In most cases, it solely implements permanent measuring, using the sensor's "no dutycycle" mode (the factory default). But **the sensor offers much more than this one mode**. It actually features two working modes, along with a "going to sleep" mode, **dutycycles ranging from 1 to about 30 minutes** and several other capabilities.
 So I decided to put together a python library that would make fuller use of the sensor's capabilities. In addition, my project would
@@ -12,7 +12,11 @@ So I decided to put together a python library that would make fuller use of the 
 
 So yes, admittedly, this is indeed my first python project. But don't let that scare you away! The code has been tested and it works. On the other hand, feel free to suggest improvements!
 # Get started..
-Just plug your sensor into a USB port, open test.py, edit the constructor call to your needs (the device_path) and run test.py in your console. Now you can see just how clean or dirty the air you're breathing everyday is.
+Just plug your sensor into a USB port, open test.py in an editor of your choice, edit the constructor call to your needs (the device_path) and run **>python3 test.py** in your console. Now you can see just how clean or dirty the air you're breathing everyday is.
+
+**You have to use python3 insead of python2. Depends on your system if python call is mapped to version 2 or version 3.**
+
+**Advice:** If you do not code right, your sensor might get stuck in dutycycle mode when you plug it off an on again. Not so well coded other libraries or software sometimes is not able to handle this situation. Too fix this, just call sensor.reset() in your python3 code. 
 # No warranty
 SDS011 is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
