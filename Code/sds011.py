@@ -115,7 +115,8 @@ class SDS011(object):
         device_path on Win is one of your COM ports, on Linux
         one of "/dev/ttyUSB..." or "/dev/ttyAMA...".
         '''
-        logging.debug("Start of constructor")
+        logging.debug("Start of constructor with device_path {0}".format(device_path))
+        self.__device_path = device_path
         self.device = None
         self.device = serial.Serial(device_path,
                                     baudrate=9600, stopbits=serial.STOPBITS_ONE,
@@ -162,7 +163,11 @@ class SDS011(object):
         # it's better to clean up
         if self.device is not None:
             self.device.close()
-
+    # ReportMode
+    @property
+    def device_path(self):
+        """The device path of the sensor"""
+        return self.__device_path
     # ReportMode
     @property
     def reportmode(self):
@@ -377,6 +382,8 @@ class SDS011(object):
         # proof the receive value
         received = self.__response(command)
         logging.debug("Received: %s", received)
+        if len(received) == 0:
+            raise ex.NoSensorResponse("Sensor is not responding")
         # when no command or command is request command,
         # second byte has to be ReceiveByte
         if ((command is None or command == self.Command.Request) and
@@ -454,6 +461,14 @@ class SDS011(object):
                              bytes_received, bytes_received[-4:-2], self.__device_id)
         logging.debug("response() successful run")
         return bytes_received
+
+    def reset(self):
+        '''
+        Sets reportmode to Initiative, workstate to Measuring and dutycyle to 0
+        '''
+        self.workstate = self.WorkStates.Measuring
+        self.reportmode = self.ReportModes.Initiative
+        self.dutycycle = 0
 
     def __checksum_make(self, data):
         '''

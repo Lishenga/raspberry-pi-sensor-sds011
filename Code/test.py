@@ -49,8 +49,7 @@ print(sensor.dutycycle)
 print(sensor.workstate)
 print(sensor.reportmode)
 # Set dutycyle to nocycle (permanent)
-sensor.dutycycle = 0
-sensor.workstate = SDS011.WorkStates.Measuring
+sensor.reset()
 print("Permanent measureing (and make the senor get old. Just 8000 hours working!)\n \
 Do you really need permanent measurering?")
 for a in range(10):
@@ -60,34 +59,43 @@ for a in range(10):
             print("Values measured: ", values[0], "--", values[1])
             break
 
-# Example of switching the WorkState
-for a in range(3):
-    print("waking up if sleeping with a={0}.".format(a))
+try:
+    # Example of switching the WorkState
+    for a in range(3):
+        print("waking up if sleeping with a={0}.".format(a))
+        sensor.workstate = SDS011.WorkStates.Measuring
+        # Just to demonstrate. Should be 60 seconds to get right values. Sensor
+        # has to warm up!
+        time.sleep(10)
+        while True:
+            values = sensor.get_values()
+            if values is not None:
+                print("Values measured: ", values[0], "--", values[1])
+                break
+            time.sleep(2)
+        print("Going to sleep a while")
+        sensor.workstate = SDS011.WorkStates.Sleeping
+        time.sleep(5)
+
+    # Example of dutycycle
     sensor.workstate = SDS011.WorkStates.Measuring
-    # Just to demonstrate. Should be 60 seconds to get right values. Sensor has to warm up!
-    time.sleep(10)
-    while True:
-        values = sensor.get_values()
-        if values is not None:
-            print("Values measured: ", values[0], "--", values[1])
-            break
-        time.sleep(2)
-    print("Going to sleep a while")
-    sensor.workstate = SDS011.WorkStates.Sleeping
-    time.sleep(5)
+    # Setting this to 0 means permanent (each second)
+    sensor.dutycycle = 2  # valid values between 0 and 30
+    print("You have to wait at most {0} minutes before the first measuring.".format(
+        sensor.dutycycle))
+    for a in range(2):
+        print("Dutycycle with a={0}.".format(a))
+        while True:
+            values = sensor.get_values()
+            if values is not None:
+                print("Values measured: ", values[0], "--", values[1])
+                break
+    sensor.reset()
+    print("Sensor resetted normal")
+except KeyboardInterrupt:
+    sensor.reset()
+    print("Sensor resetted because of KeyboardInterrupt")
 
-# Example of dutycycle
-sensor.workstate = SDS011.WorkStates.Measuring
-# Setting this to 0 means permanent (each second)
-sensor.dutycycle = 2 # valid values between 0 and 30
-print("You have to wait at most {0} minutes before the first measuring.".format(sensor.dutycycle))
-for a in range(2):
-    print("Dutycycle with a={0}.".format(a))
-    while True:
-        values = sensor.get_values()
-        if values is not None:
-            print("Values measured: ", values[0], "--", values[1])
-            break
 
-sensor.workstate = SDS011.WorkStates.Sleeping
+
 print("Finished")

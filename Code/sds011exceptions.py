@@ -46,3 +46,6 @@ class GetStatusError(Error):
 class ReportModeError(Error):
     """Exception raised when sensor is in wrong reportmode for requested operation."""
     pass
+class NoSensorResponse(Error):
+    """Exception raised when sensor is unexpected not responding"""
+    pass
