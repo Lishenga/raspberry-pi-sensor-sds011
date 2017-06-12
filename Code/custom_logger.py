@@ -11,5 +11,5 @@ def register_data(timing, unit, values):
         file.write(log)
 
 
-for x in range(5):
-    register_data(2, 'µg/m³', [30 + x, x + 20.5])
+# for x in range(5):
+#     register_data(2, 'µg/m³', [30 + x, x + 20.5])

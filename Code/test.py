@@ -12,9 +12,11 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 '''
+from custom_logger import register_data
 import sys
 import time
 from sds011 import SDS011
+
 
 # Create a new sensor instance
 
@@ -91,6 +93,8 @@ def printValues(timing, values, unit_of_measure):
         unit = 'pcs/0.01cft'
     print("Waited %d secs\nValues measured in %s:    PM2.5  " %
           (timing, unit), values[1], ", PM10 ", values[0])
+
+    register_data(timing, unit, values)
     # print("Values measured in pcs/0.01sqf: PM2.5 %d, PM10 %d" % (Mass2Con('pm25',values[1]), Mass2Con('pm10',values[0])))
 
 # simple parsing the command arguments for setting options
