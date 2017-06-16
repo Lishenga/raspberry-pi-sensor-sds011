@@ -16,6 +16,7 @@ from custom_logger import register_data
 import sys
 import time
 from sds011 import SDS011
+from requests.exceptions import ConnectionError
 
 # from dev import _print
 
@@ -29,6 +30,10 @@ On the Pi make sure the login getty() is not using the serial interface.
 Have a look at Win or Linux documentation.
 Look e.g. via lsusb command for Qin Hen Electronics USB id.
 '''
+def turnoff_sensor(_sensor):
+    _sensor.reset()
+    _sensor.workstate = SDS011.WorkStates.Sleeping
+    _sensor = None
 
 
 def printlog(level, string):
@@ -39,6 +44,8 @@ debug = 0       # debug level in sds011 class module
 cycles = 4      # serial read timeout in seconds, dflt 2
 timeout = 2     # timeout on serial line read
 sleep = 10
+sleep_exists = False
+
 # print values in mass or pieces
 unit_of_measure = SDS011.UnitsOfMeasure.MassConcentrationEuropean
 for arg in range(len(sys.argv) - 1, 0, -1):
@@ -55,6 +62,7 @@ for arg in range(len(sys.argv) - 1, 0, -1):
         timeout = int(sys.argv[arg + 1])
         del sys.argv[arg + 1]
         del sys.argv[arg]
+
     elif sys.argv[arg][0:2] == '-u':
         if sys.argv[arg + 1] == '0':
             unit_of_measure = SDS011.UnitsOfMeasure.MassConcentrationEuropean
@@ -68,6 +76,8 @@ for arg in range(len(sys.argv) - 1, 0, -1):
         sleep = int(sys.argv[arg + 1])
         del sys.argv[arg + 1]
         del sys.argv[arg]
+        sleep_exists = True
+
 
 print ('Argument List:', str(sys.argv))
 if len(sys.argv) < 2:
@@ -102,7 +112,12 @@ def printValues(timing, values, unit_of_measure):
     print("Waited %d secs\nValues measured in %s:    PM2.5  " %
           (timing, unit), values[1], ", PM10 ", values[0])
 
-    register_data(timing, unit, values, local=False, server=True)
+    try:
+        register_data(timing, unit, values, local=True, server=True)
+    except ConnectionError:
+        print('NO conectado')
+        register_data(timing, unit, values, local=True, server=False)
+
     # print("Values measured in pcs/0.01sqf: PM2.5 %d, PM10 %d" % (Mass2Con('pm25',values[1]), Mass2Con('pm10',values[0])))
 
 # simple parsing the command arguments for setting options
@@ -126,83 +141,87 @@ print("In sleep mode the fan will be turned off.")
 # Set dutycyle to nocycle (permanent)
 sensor.reset()
 # _print(sensor.dutycycle, 'sensor.dutycycle')
-for a in range(cycles):
-    while True:
-        values = sensor.get_values()
-        if values is not None:
-            printValues(0, values, sensor.unit_of_measure)
-            break
-
-try:
-    # Example of switching the WorkState
-    # print("\n%d X switching between measuring and sleeping mode:" % cycles)
-    # print("\tMeasurement state: Read the values, on no read, wait 2 seconds and try again")
-    # print("\tOn read success, put the mode into sleeping mode for 5 seconds, and loop again")
-    # for a in range(cycles):
-    #     print("%d time: push it into wake state" % a)
-    #     sensor.workstate = SDS011.WorkStates.Measuring
-    #     # Just to demonstrate. Should be 60 seconds to get qualified values.
-    #     # The sensor needs to warm up!
-    #     time.sleep(10)
-    #     last = time.time()
-    #     while True:
-    #         last1 = time.time()
-    #         values = sensor.get_values()
-    #         if values is not None:
-    #             printValues(time.time() - last, values, sensor.unit_of_measure)
-    #             break
-    #         print("Waited %d seconds, no values read, wait 2 seconds, and try to read again" % (
-    #             time.time() - last1))
-    #         time.sleep(2)
-    #     print("Read was succesfull. Going to sleep for 5 seconds")
-    #     sensor.workstate = SDS011.WorkStates.Sleeping
-    #     time.sleep(5)
-
-    # Example of duty cycle
-    DC = 2
-    if len(sys.argv) > 2 and sys.argv[2].isdigit():
-        if int(sys.argv[2]) >= 0 and int(sys.argv[2]) < 30:
-            DC = int(sys.argv[2])
-        else:
-            print("Invalid duty cycle %s. Using 2 minutes" % sys.argv[2])
-    print("\n%d X measurements with duty cycle of  %d minutes." % (cycles, DC))
-    #sensor.workstate = SDS011.WorkStates.Measuring
-    # Setting this to 0 means permanent measurement for once each second
-    # sensor.dutycycle = DC  # valid values between 0 and 30
-    print("Waiting time: at most {0} minutes before the measurement.".format(
-        sensor.dutycycle))
-    for a in range(cycles):
-        print("Duty cycle measurement nr {0}.".format(a))
-        # sensor.workstate = SDS011.WorkStates.Measuring
-        # sensor.dutycycle = DC  # valid values between 0 and 30
-        sensor.reset()
-        # _print(sensor.dutycycle, 'sensor.dutycycle')
-        last = time.time()
-        while True:
-            last1 = time.time()
-            values = sensor.get_values()
-            if values is not None:
-                printValues(time.time() - last, values, sensor.unit_of_measure)
-                break
-            print("Waited %d secs, no values read, we try again" %
-                  (time.time() - last1))
-        sensor.workstate = SDS011.WorkStates.Sleeping
-        print("Read was succesfull. Going to sleep for %s seconds" % sleep)
-        time.sleep(sleep)
-
-    # end of test
-    print("\nSensor reset to normal")
-    sensor.reset()
-    # sensor = None
-except KeyboardInterrupt:
-    sensor.reset()
-    sensor.workstate = SDS011.WorkStates.Sleeping
-    sensor = None
-    sys.exit("Sensor reset due to a KeyboardInterrupt")
+if not sleep_exists:
+    try:
+        for a in range(cycles):
+            while True:
+                values = sensor.get_values()
+                if values is not None:
+                    printValues(0, values, sensor.unit_of_measure)
+                    break
+    except KeyboardInterrupt:
+        turnoff_sensor(sensor)
+        sys.exit("Sensor reset due to a KeyboardInterrupt")
+    else:
+        if sensor is not None:
+            turnoff_sensor(sensor)
 else:
-    if sensor is not None:
+    try:
+        # Example of switching the WorkState
+        # print("\n%d X switching between measuring and sleeping mode:" % cycles)
+        # print("\tMeasurement state: Read the values, on no read, wait 2 seconds and try again")
+        # print("\tOn read success, put the mode into sleeping mode for 5 seconds, and loop again")
+        # for a in range(cycles):
+        #     print("%d time: push it into wake state" % a)
+        #     sensor.workstate = SDS011.WorkStates.Measuring
+        #     # Just to demonstrate. Should be 60 seconds to get qualified values.
+        #     # The sensor needs to warm up!
+        #     time.sleep(10)
+        #     last = time.time()
+        #     while True:
+        #         last1 = time.time()
+        #         values = sensor.get_values()
+        #         if values is not None:
+        #             printValues(time.time() - last, values, sensor.unit_of_measure)
+        #             break
+        #         print("Waited %d seconds, no values read, wait 2 seconds, and try to read again" % (
+        #             time.time() - last1))
+        #         time.sleep(2)
+        #     print("Read was succesfull. Going to sleep for 5 seconds")
+        #     sensor.workstate = SDS011.WorkStates.Sleeping
+        #     time.sleep(5)
+
+        # Example of duty cycle
+        DC = 2
+        if len(sys.argv) > 2 and sys.argv[2].isdigit():
+            if int(sys.argv[2]) >= 0 and int(sys.argv[2]) < 30:
+                DC = int(sys.argv[2])
+            else:
+                print("Invalid duty cycle %s. Using 2 minutes" % sys.argv[2])
+        print("\n%d X measurements with duty cycle of  %d minutes." % (cycles, DC))
+        #sensor.workstate = SDS011.WorkStates.Measuring
+        # Setting this to 0 means permanent measurement for once each second
+        # sensor.dutycycle = DC  # valid values between 0 and 30
+        print("Waiting time: at most {0} minutes before the measurement.".format(
+            sensor.dutycycle))
+        for a in range(cycles):
+            print("Duty cycle measurement nr {0}.".format(a))
+            # sensor.workstate = SDS011.WorkStates.Measuring
+            # sensor.dutycycle = DC  # valid values between 0 and 30
+            sensor.reset()
+            # _print(sensor.dutycycle, 'sensor.dutycycle')
+            last = time.time()
+            while True:
+                last1 = time.time()
+                values = sensor.get_values()
+                if values is not None:
+                    printValues(time.time() - last, values, sensor.unit_of_measure)
+                    break
+                print("Waited %d secs, no values read, we try again" %
+                      (time.time() - last1))
+            sensor.workstate = SDS011.WorkStates.Sleeping
+            print("Read was succesfull. Going to sleep for %s seconds" % sleep)
+            time.sleep(sleep)
+
+        # end of test
+        print("\nSensor reset to normal")
         sensor.reset()
-        sensor.workstate = SDS011.WorkStates.Sleeping
-        sensor = None
+        # sensor = None
+    except KeyboardInterrupt:
+        turnoff_sensor(sensor)
+        sys.exit("Sensor reset due to a KeyboardInterrupt")
+    else:
+        if sensor is not None:
+            turnoff_sensor(sensor)
 
 print("Finished test")

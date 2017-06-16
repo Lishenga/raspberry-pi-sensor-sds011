@@ -31,10 +31,6 @@ def send_to_server(payload):
 
 
 def register_data(timing, unit, values, local=False, server=True):
-    if local:
-        with open(FILE_PATH, 'a') as file:
-            log = """Waited {} secs\nValues measured in {}:    PM2.5  {} , PM10 {} \n""".format(timing, unit, values[1], values[0])
-            file.write(log)
     if server:
         send_to_server({
             "measured": unit,
@@ -43,6 +39,10 @@ def register_data(timing, unit, values, local=False, server=True):
             "created_at": str(datetime.now())
         })
 
+    if local:
+        with open(FILE_PATH, 'a') as file:
+            log = "{},\t\t\t{},\t\t\t{},\t\t\tµg/m³\n".format(str(datetime.now()), values[1], values[0])
+            file.write(log)
 
 # for x in range(5):
 #     PAYLOAD_TEST['pm_10'] += x
