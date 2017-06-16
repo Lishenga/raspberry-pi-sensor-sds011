@@ -16,7 +16,7 @@ from custom_logger import register_data
 import sys
 import time
 from sds011 import SDS011
-from requests.exceptions import ConnectionError
+# from requests.exceptions import ConnectionError
 
 # from dev import _print
 
@@ -112,11 +112,7 @@ def printValues(timing, values, unit_of_measure):
     print("Waited %d secs\nValues measured in %s:    PM2.5  " %
           (timing, unit), values[1], ", PM10 ", values[0])
 
-    try:
-        register_data(timing, unit, values, local=True, server=True)
-    except ConnectionError:
-        print('NO conectado')
-        register_data(timing, unit, values, local=True, server=False)
+    register_data(timing, unit, values, local=True, server=True)
 
     # print("Values measured in pcs/0.01sqf: PM2.5 %d, PM10 %d" % (Mass2Con('pm25',values[1]), Mass2Con('pm10',values[0])))
 
