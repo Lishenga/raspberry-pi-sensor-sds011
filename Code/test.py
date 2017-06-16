@@ -127,17 +127,17 @@ def printValues(timing, values, unit_of_measure):
 sensor = SDS011(sys.argv[1], timeout=timeout, unit_of_measure=unit_of_measure)
 # raise KeyboardInterrupt
 # Now we have some details about it
-print("SDS011 sensor info:")
-print("Device ID: ", sensor.device_id)
-print("Device firmware: ", sensor.firmware)
-print("Current device cycle (0 is permanent on): ", sensor.dutycycle)
-print(sensor.workstate)
-print(sensor.reportmode)
+# print("SDS011 sensor info:")
+# print("Device ID: ", sensor.device_id)
+# print("Device firmware: ", sensor.firmware)
+# print("Current device cycle (0 is permanent on): ", sensor.dutycycle)
+# print(sensor.workstate)
+# print(sensor.reportmode)
 
-print("\n%d measurements in permanent measuring mode" % (cycles * 2))
-print("This will make the sensor getting old. The TTL is just 8000 hours!")
-print("Do you really need to use the permanent measurering mode?")
-print("In sleep mode the fan will be turned off.")
+# print("\n%d measurements in permanent measuring mode" % (cycles * 2))
+# print("This will make the sensor getting old. The TTL is just 8000 hours!")
+# print("Do you really need to use the permanent measurering mode?")
+# print("In sleep mode the fan will be turned off.")
 # Set dutycyle to nocycle (permanent)
 sensor.reset()
 # _print(sensor.dutycycle, 'sensor.dutycycle')
@@ -187,8 +187,9 @@ else:
             if int(sys.argv[2]) >= 0 and int(sys.argv[2]) < 30:
                 DC = int(sys.argv[2])
             else:
-                print("Invalid duty cycle %s. Using 2 minutes" % sys.argv[2])
-        print("\n%d X measurements with duty cycle of  %d minutes." % (cycles, DC))
+                pass
+                # print("Invalid duty cycle %s. Using 2 minutes" % sys.argv[2])
+        # print("\n%d X measurements with duty cycle of  %d minutes." % (cycles, DC))
         #sensor.workstate = SDS011.WorkStates.Measuring
         # Setting this to 0 means permanent measurement for once each second
         # sensor.dutycycle = DC  # valid values between 0 and 30
