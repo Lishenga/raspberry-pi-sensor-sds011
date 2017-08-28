@@ -1,3 +1,7 @@
+# Important
+This project is a fork to manipulate a raspberry pi with a particle sensor to send the data to a remote server that renders a graph with the data.
+The final result lives in [http://raspsensor.herokuapp.com/](http://raspsensor.herokuapp.com/)
+
 # Introduction
 
 The SDS011 module's operational features, including its PM2.5/PM10 sensing features, **greatly surpass those of most other such modules available via the web**. In addition to a standard **duty cycle and firmware / sensor id readouts**, these features include a useful **sleep mode**. The Python3 code described below controls the sensor, developed by Nova Fitness Co., Ltd http://inovafitness.com/en/, for measurement of air particles <=10µm (PM10) and <=2.5µm (PM2.5).
